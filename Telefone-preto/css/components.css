@@ -1,0 +1,166 @@
+.choice-btn {
+    background-color: #1a1a24;
+    border: 2px solid #2d2d3c;
+    color: #f0f0f5;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    padding: 14px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+  }
+  
+  .choice-btn:hover {
+    background-color: var(--accent-red);
+    border-color: var(--bright-red);
+    color: #ffffff;
+    transform: translateX(6px);
+    box-shadow: -4px 0 0 var(--bright-red), 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+  
+  .btn-icon {
+    background-color: #181822;
+    border: 1px solid #333344;
+    color: #d0d0dd;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  
+  .btn-icon:hover {
+    background-color: #2a2a3a;
+    color: #ffffff;
+  }
+  
+  .inventory-item {
+    background-color: #16161e;
+    border: 1px solid #2d2d38;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    color: var(--text-green);
+    border-left: 3px solid var(--text-green);
+    font-size: 0.9rem;
+  }
+  
+  /* Modais de Conquistas */
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-backdrop.hidden {
+    display: none;
+  }
+  
+  .modal-content {
+    background-color: #121218;
+    border: 2px solid var(--accent-red);
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9);
+  }
+  
+  .modal-header {
+    padding: 15px 20px;
+    background-color: #0a0a0e;
+    border-bottom: 1px solid #2a2a35;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modal-header h2 {
+    font-family: var(--font-mono);
+    color: var(--text-amber);
+    font-size: 1.2rem;
+  }
+  
+  .btn-close {
+    background: none;
+    border: none;
+    color: #aaaaee;
+    font-size: 1.8rem;
+    cursor: pointer;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .modal-desc {
+    font-size: 0.95rem;
+    color: #aaaaee;
+    margin-bottom: 20px;
+  }
+  
+  .achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+  }
+  
+  .achievement-card {
+    background-color: #0a0a0d;
+    border: 1px solid #22222c;
+    padding: 12px;
+    border-radius: 4px;
+    opacity: 0.5;
+  }
+  
+  .achievement-card.unlocked {
+    border-color: var(--text-green);
+    background-color: #101a14;
+    opacity: 1;
+  }
+  
+  .card-code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-amber);
+  }
+  
+  .card-title {
+    font-size: 0.95rem;
+    margin: 6px 0;
+    color: #ffffff;
+  }
+  
+  .card-desc {
+    font-size: 0.8rem;
+    color: #888899;
+  }
+  
+  .modal-footer {
+    padding: 15px;
+    background-color: #0a0a0e;
+    border-top: 1px solid #2a2a35;
+    text-align: right;
+  }
+  
+  .btn-danger {
+    background-color: #4a0000;
+    border: 1px solid var(--bright-red);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .btn-danger:hover {
+    background-color: var(--bright-red);
+  }
