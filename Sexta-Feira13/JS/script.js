@@ -1,7 +1,66 @@
 /* ================================================================
    VOCÊ SOBREVIVERIA? — CRYSTAL LAKE
-   Versão revisada: UX, progressão, finais e troféus persistentes.
+   Versão revisada: UX, progressão, finais, troféus persistentes,
+   sistema de som e botão de voltar ao início.
    ================================================================ */
+
+/* ----------------------------------------------------------------
+   ÁUDIO
+   Coloque os arquivos correspondentes em /audio/. Se um arquivo
+   não existir, o som simplesmente não toca — nada quebra.
+   ---------------------------------------------------------------- */
+const AudioManager = (() => {
+  let muted = localStorage.getItem("crystalLakeMuted") === "true";
+
+  const bgm = new Audio("audio/ambient.mp3");
+  bgm.loop = true;
+  bgm.volume = 0.35;
+
+  const sfx = {
+    dice: new Audio("audio/dice.mp3"),
+    success: new Audio("audio/success.mp3"),
+    fail: new Audio("audio/fail.mp3"),
+    hit: new Audio("audio/hit.mp3"),
+    item: new Audio("audio/item.mp3"),
+    click: new Audio("audio/click.mp3"),
+    horror: new Audio("audio/horror.mp3"),
+    piorCena: new Audio("audio/pior-cena.mp3")
+  };
+  Object.values(sfx).forEach(a => { a.volume = 0.6; });
+
+  function applyMuteState() {
+    bgm.muted = muted;
+    Object.values(sfx).forEach(a => { a.muted = muted; });
+    const btn = document.getElementById("sound-toggle");
+    if (btn) {
+      btn.textContent = muted ? "🔇" : "🔊";
+      btn.setAttribute("aria-label", muted ? "Ativar som" : "Desativar som");
+    }
+  }
+
+  function play(name) {
+    const sound = sfx[name];
+    if (!sound) return;
+    try {
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    } catch (e) { /* arquivo ausente — ignora silenciosamente */ }
+  }
+
+  function startBgm() {
+    bgm.play().catch(() => {});
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    localStorage.setItem("crystalLakeMuted", muted);
+    applyMuteState();
+  }
+
+  return { play, startBgm, toggleMute, applyMuteState };
+})();
+
+/* ---------------------------------------------------------------- */
 
 const ENDINGS = {
   ending_death: { name: "Crystal Lake", description: "Descobriu o destino mais sombrio.", icon: "☠️" },
@@ -66,6 +125,7 @@ function addItem(itemName) {
   }
   gameState.inventory.push(itemName);
   updateHUD();
+  AudioManager.play("item");
   showMessage(`Item obtido: ${itemName}.`);
   return true;
 }
@@ -97,6 +157,7 @@ function hideMessage() { document.getElementById("dice-banner").classList.add("h
 function takeDamage(amount) {
   gameState.hp = Math.max(0, gameState.hp - amount);
   updateHUD();
+  if (amount > 0) AudioManager.play("hit");
   if (gameState.hp <= 0) setTimeout(() => goToScene("ending_death"), 650);
 }
 
@@ -114,6 +175,7 @@ function handleDiceTest({ bonus = 0, target, statusMsg, onSuccess, onFail }) {
   status.innerText = statusMsg || "O DADO ESTÁ ROLANDO...";
   stage.classList.remove("hidden");
   cube.classList.add("rolling");
+  AudioManager.play("dice");
 
   const roll = rollD6Value();
   const total = roll + bonus;
@@ -124,6 +186,7 @@ function handleDiceTest({ bonus = 0, target, statusMsg, onSuccess, onFail }) {
     const r = faceRotations[roll];
     cube.style.transform = `rotateX(${r.x + 720}deg) rotateY(${r.y + 720}deg)`;
     status.innerText = `DADO: ${roll}${bonus ? ` + ${bonus}` : ""}  •  TOTAL: ${total}  •  ${success ? "SUCESSO" : "FALHA"}`;
+    AudioManager.play(success ? "success" : "fail");
 
     setTimeout(() => {
       stage.classList.add("hidden");
@@ -139,7 +202,6 @@ function updateHUD() {
   document.getElementById("hp-bar").style.width = `${gameState.hp / gameState.maxHp * 100}%`;
   document.getElementById("stamina-display").innerText = `${gameState.stamina}/${gameState.maxStamina}`;
   document.getElementById("stamina-bar").style.width = `${gameState.stamina / gameState.maxStamina * 100}%`;
-  document.getElementById("inv-count");
   const oldInv = document.querySelector(".inventory-slots");
   if (oldInv) oldInv.innerHTML = gameState.inventory.map(item => `<span class="item-chip">${item}</span>`).join("");
   document.getElementById("progress-text").innerText = `Decisões: ${gameState.decisions}`;
@@ -148,7 +210,7 @@ function updateHUD() {
 /* ========================= ROTEIRO (Extensões Corrigidas) ========================= */
 const scenes = {
   prologue: {
-    chapter: "PRÓLOGO", title: "A estrada para Crystal Lake", image: "img/prologue_road.png",
+    chapter: "PRÓLOGO", title: "A estrada para Crystal Lake", image: "img/prologue-road.mp4",
     text: "É sexta-feira, 13 de julho de 1984. Uma tempestade derruba a visibilidade enquanto seu carro para numa estrada isolada.\n\nUm letreiro enferrujado indica Crystal Lake. O acampamento deveria estar fechado há décadas, mas uma luz aparece entre as árvores.\n\nÀ esquerda, um posto abandonado. À frente, os portões do acampamento.",
     choices: [
       { text: "Investigar o posto em busca de recursos", tag: "TESTE DE SORTE", action: () => handleDiceTest({ target: 3, statusMsg: "VASculhando o posto abandonado...", onSuccess: () => { addItem("Lanterna"); goToScene("gas_station"); }, onFail: () => { takeDamage(1); goToScene("gas_station"); } }) },
@@ -172,7 +234,7 @@ const scenes = {
     ]
   },
   cabin_inside: {
-    chapter: "CAPÍTULO II", title: "O despertar", image: "img/cabin_inside.png", text: "Dentro da cabana, tudo parece abandonado. Sobre uma prateleira há um Kit Médico. Então a porta dos fundos se rompe.\n\nUma figura enorme surge no vão: máscara de hóquei, roupa encharcada e um facão. Jason está diante de você.\n\nVocê tem poucos segundos para decidir.",
+    chapter: "CAPÍTULO II", title: "O despertar", image: "img/cabin-inside.mp4", sting: "horror", text: "Dentro da cabana, tudo parece abandonado. Sobre uma prateleira há um Kit Médico. Então a porta dos fundos se rompe.\n\nUma figura enorme surge no vão: máscara de hóquei, roupa encharcada e um facão. Jason está diante de você.\n\nVocê tem poucos segundos para decidir.",
     choices: [
       { showIf: () => !hasItem("Kit Médico"), text: "Pegar o Kit Médico e correr", action: () => { if (addItem("Kit Médico")) goToScene("forest_chase"); } },
       { reqItem: "Lanterna", text: "Apontar a Lanterna e ganhar tempo para fugir", tag: "ITEM", action: () => { removeItem("Lanterna"); goToScene("forest_chase"); } },
@@ -188,7 +250,7 @@ const scenes = {
     ]
   },
   forest_chase: {
-    chapter: "CAPÍTULO III", title: "A perseguição", image: "img/forest_chase.png", text: "Você atravessa a floresta sob a chuva. Os passos atrás de você não diminuem.\n\nÀ frente, três caminhos oferecem uma chance de fuga: a garagem, a torre de vigia e o cais.",
+    chapter: "CAPÍTULO III", title: "A perseguição", image: "img/forest-chase.mp4", text: "Você atravessa a floresta sob a chuva. Os passos atrás de você não diminuem.\n\nÀ frente, três caminhos oferecem uma chance de fuga: a garagem, a torre de vigia e o cais.",
     choices: [
       { text: "Correr para a garagem", action: () => goToScene("garage_scene") },
       { text: "Subir até a torre de vigia", action: () => goToScene("watchtower_path") },
@@ -207,14 +269,14 @@ const scenes = {
     ]
   },
   garage_escape: {
-    chapter: "CAPÍTULO IV", title: "Sem tempo para tentar de novo", image: "img/forest_chase.png", text: "O barulho chamou atenção. Jason já está entrando na garagem. A Pick-Up não é mais uma opção segura.\n\nVocê corre por uma porta lateral e volta para a trilha.",
+    chapter: "CAPÍTULO IV", title: "Sem tempo para tentar de novo", image: "img/forest-chase.mp4", text: "O barulho chamou atenção. Jason já está entrando na garagem. A Pick-Up não é mais uma opção segura.\n\nVocê corre por uma porta lateral e volta para a trilha.",
     choices: [
       { text: "Correr para a torre de vigia", action: () => goToScene("watchtower_path") },
       { text: "Correr para o lago", action: () => goToScene("lake_trail") }
     ]
   },
   watchtower_path: {
-    chapter: "CAPÍTULO IV", title: "A torre de vigia", image: "img/watchtower.png", text: "No alto da torre existe um rádio de emergência. A energia está instável, mas a antena ainda aponta para a estrada estadual.\n\nUm sinalizador também poderia chamar atenção de quem estiver passando pela região.",
+    chapter: "CAPÍTULO IV", title: "A torre de vigia", image: "img/watchtower.mp4", text: "No alto da torre existe um rádio de emergência. A energia está instável, mas a antena ainda aponta para a estrada estadual.\n\nUm sinalizador também poderia chamar atenção de quem estiver passando pela região.",
     choices: [
       { text: "Tentar transmitir um pedido de socorro", tag: "TESTE DE HABILIDADE", action: () => handleDiceTest({ target: 4, statusMsg: "BUSCANDO A FREQUÊNCIA...", onSuccess: () => goToScene("ending_heroic"), onFail: () => { takeDamage(1); goToScene("tower_escape"); } }) },
       { reqItem: "Sinalizador", text: "Disparar o sinalizador para a estrada", tag: "ITEM", action: () => { removeItem("Sinalizador"); goToScene("ending_heroic"); } },
@@ -222,14 +284,14 @@ const scenes = {
     ]
   },
   tower_escape: {
-    chapter: "CAPÍTULO IV", title: "A torre não é segura", image: "img/forest_chase.png", text: "O rádio falha e um estrondo faz a torre tremer. Ficar aqui seria um erro.\n\nVocê desce antes que seja tarde demais.",
+    chapter: "CAPÍTULO IV", title: "A torre não é segura", image: "img/forest-chase.mp4", text: "O rádio falha e um estrondo faz a torre tremer. Ficar aqui seria um erro.\n\nVocê desce antes que seja tarde demais.",
     choices: [
       { text: "Ir para o cais", action: () => goToScene("lake_trail") },
       { text: "Voltar para a garagem", action: () => goToScene("garage_escape") }
     ]
   },
   lake_trail: {
-    chapter: "CAPÍTULO IV", title: "As águas de Crystal Lake", image: "img/lake.png", text: "O cais está escorregadio e a chuva transforma o lago em uma massa escura. Uma pequena lancha de manutenção está presa à margem.\n\nVocê ouve passos atrás de si. Não há muito tempo.",
+    chapter: "CAPÍTULO IV", title: "As águas de Crystal Lake", image: "img/lake.mp4", text: "O cais está escorregadio e a chuva transforma o lago em uma massa escura. Uma pequena lancha de manutenção está presa à margem.\n\nVocê ouve passos atrás de si. Não há muito tempo.",
     choices: [
       { text: "Tentar ligar o motor da lancha", tag: "TESTE DE AGILIDADE", action: () => handleDiceTest({ target: 4, statusMsg: "PUXANDO O MOTOR...", onSuccess: () => goToScene("ending_good_boat"), onFail: () => { takeDamage(2); goToScene("lake_escape"); } }) },
       { reqItem: "Sinalizador", text: "Usar o sinalizador para chamar ajuda", tag: "ITEM", action: () => { removeItem("Sinalizador"); goToScene("ending_heroic"); } },
@@ -237,15 +299,15 @@ const scenes = {
     ]
   },
   lake_escape: {
-    chapter: "CAPÍTULO IV", title: "O cais ficou para trás", image: "img/forest_chase.png", text: "O motor não pegou. Você recua antes que alguém alcance o cais. A mata parece ser a única saída restante.",
+    chapter: "CAPÍTULO IV", title: "O cais ficou para trás", image: "img/forest-chase.mp4", text: "O motor não pegou. Você recua antes que alguém alcance o cais. A mata parece ser a única saída restante.",
     choices: [
       { text: "Subir até a torre de vigia", action: () => goToScene("watchtower_path") },
       { text: "Correr para a garagem", action: () => goToScene("garage_escape") }
     ]
   },
-  ending_death: { chapter: "FIM DE JOGO", image: "img/ending_death.png", title: "Crystal Lake venceu", text: "A perseguição termina na escuridão. Crystal Lake guarda mais um segredo, e sua história chega ao fim.\n\nVocê não sobreviveu desta vez — mas talvez outra escolha mude o resultado.", ending: true, choices: [{ text: "Tentar novamente", action: () => restartGame() }] },
+  ending_death: { chapter: "FIM DE JOGO", image: "img/ending_death.png", sting: "piorCena", title: "Crystal Lake venceu", text: "A perseguição termina na escuridão. Crystal Lake guarda mais um segredo, e sua história chega ao fim.\n\nVocê não sobreviveu desta vez — mas talvez outra escolha mude o resultado.", ending: true, choices: [{ text: "Tentar novamente", action: () => restartGame() }] },
   ending_good_car: { chapter: "FINAL", image: "img/ending_car.png", title: "Fuga pela rodovia", text: "A Pick-Up finalmente pega. Você atravessa os portões e acelera pela estrada, deixando Crystal Lake para trás.\n\nVocê sobreviveu.", ending: true, choices: [{ text: "Jogar novamente", action: () => restartGame() }] },
-  ending_good_boat: { chapter: "FINAL", image: "img/ending_boat.png", title: "Além das águas", text: "O motor da lancha responde. Você cruza o lago e alcança a margem oposta antes que a perseguição possa continuar.\n\nVocê sobreviveu.", ending: true, choices: [{ text: "Jogar novamente", action: () => restartGame() }] },
+  ending_good_boat: { chapter: "FINAL", image: "img/ending-boat.mp4", title: "Além das águas", text: "O motor da lancha responde. Você cruza o lago e alcança a margem oposta antes que a perseguição possa continuar.\n\nVocê sobreviveu.", ending: true, choices: [{ text: "Jogar novamente", action: () => restartGame() }] },
   ending_heroic: { chapter: "FINAL", image: "img/ending_rescue.png", title: "Resgate estadual", text: "Seu pedido de socorro é ouvido. Sirenes aparecem na estrada e a equipe de resgate chega ao acampamento.\n\nVocê sobreviveu — e Crystal Lake terá de explicar o que aconteceu aqui.", ending: true, choices: [{ text: "Jogar novamente", action: () => restartGame() }] }
 };
 
@@ -255,21 +317,50 @@ function goToScene(sceneKey) {
   gameState.currentScene = sceneKey;
   gameState.visited.add(sceneKey);
   if (scene.ending) saveTrophy(sceneKey);
+  if (scene.sting) AudioManager.play(scene.sting);
 
   document.getElementById("chapter-badge").innerText = scene.chapter;
   document.getElementById("scene-title").innerText = scene.title;
   document.getElementById("scene-text").innerText = typeof scene.text === "function" ? scene.text() : scene.text;
 
+  // Aceita as duas mídias: se o arquivo da cena for .mp4/.webm/.mov, usa
+  // vídeo em loop; qualquer outra extensão (.png/.jpg/etc.) usa imagem.
+  // Assim você pode ir trocando cena por cena, no seu ritmo.
   const img = document.getElementById("scene-image");
+  const video = document.getElementById("scene-video");
   const placeholder = document.getElementById("image-placeholder");
-  if (scene.image) {
+  const isVideo = /\.(mp4|webm|mov)$/i.test(scene.image || "");
+
+  video.pause();
+  img.classList.add("hidden");
+  video.classList.add("hidden");
+
+  if (scene.image && isVideo) {
+    video.style.opacity = "0";
+    video.oncanplay = () => {
+      video.classList.remove("hidden");
+      placeholder.classList.add("hidden");
+      video.play().catch(() => {});
+      requestAnimationFrame(() => { video.style.opacity = "1"; });
+    };
+    video.onerror = () => { video.classList.add("hidden"); placeholder.classList.remove("hidden"); };
+    video.src = scene.image;
+    video.load();
+  } else if (scene.image) {
+    img.style.opacity = "0";
+    img.onload = () => {
+      img.classList.remove("hidden");
+      placeholder.classList.add("hidden");
+      img.style.animation = "none";
+      void img.offsetWidth;
+      img.style.animation = "";
+      requestAnimationFrame(() => { img.style.opacity = "1"; });
+    };
+    img.onerror = () => { img.classList.add("hidden"); placeholder.classList.remove("hidden"); };
     img.src = scene.image;
     img.alt = scene.title;
-    img.classList.remove("hidden");
-    placeholder.classList.add("hidden");
-    img.onerror = () => { img.classList.add("hidden"); placeholder.classList.remove("hidden"); };
   } else {
-    img.classList.add("hidden"); placeholder.classList.remove("hidden");
+    placeholder.classList.remove("hidden");
   }
 
   const container = document.getElementById("choices-container");
@@ -288,6 +379,7 @@ function goToScene(sceneKey) {
       hideMessage();
       gameState.decisions++;
       updateHUD();
+      AudioManager.play("click");
       choice.action?.();
     };
     container.appendChild(btn);
@@ -308,6 +400,13 @@ function restartGame() {
   goToScene("prologue");
 }
 
+function confirmRestart() {
+  if (gameState.decisions === 0) { restartGame(); return; }
+  if (confirm("Voltar ao início vai reiniciar sua run atual. Continuar?")) {
+    restartGame();
+  }
+}
+
 function openTrophies() { updateTrophyUI(); document.getElementById("trophy-modal").classList.remove("hidden"); }
 function closeTrophies() { document.getElementById("trophy-modal").classList.add("hidden"); }
 
@@ -315,7 +414,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("trophy-button").onclick = openTrophies;
   document.getElementById("close-trophy").onclick = closeTrophies;
   document.getElementById("trophy-modal").addEventListener("click", e => { if (e.target.id === "trophy-modal") closeTrophies(); });
+  document.getElementById("restart-button").onclick = confirmRestart;
+  document.getElementById("sound-toggle").onclick = () => AudioManager.toggleMute();
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeTrophies(); });
+
+  // A maioria dos navegadores só libera áudio após uma interação do usuário.
+  document.addEventListener("click", function startAudioOnce() {
+    AudioManager.startBgm();
+    document.removeEventListener("click", startAudioOnce);
+  }, { once: true });
+
+  AudioManager.applyMuteState();
   updateTrophyUI();
   updateHUD();
   goToScene("prologue");
