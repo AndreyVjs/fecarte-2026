@@ -5,10 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#090a0d">
   <title>Você Sobreviveria? — Crystal Lake</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="scanlines" aria-hidden="true"></div>
+
+  <!-- Fundo cinematográfico: cobre 100% da viewport, fixo, atrás de tudo.
+       Antes vivia dentro do #narrative-box (caixa com borda); agora é o
+       cenário inteiro da tela, sempre visível mesmo com a página rolando. -->
+  <div id="scene-image-container" aria-hidden="true">
+    <img id="scene-image" src="" alt="" class="hidden">
+    <video id="scene-video" class="hidden" autoplay loop muted playsinline></video>
+    <div id="image-placeholder" class="image-fallback">
+      <span class="placeholder-mark">◼</span>
+      <span id="placeholder-text">ILUSTRAÇÃO DA CENA</span>
+    </div>
+    <div class="scene-vignette"></div>
+  </div>
 
   <div id="game-container">
     <header id="hud">
@@ -30,27 +48,25 @@
         </div>
       </div>
 
-      <button id="trophy-button" class="trophy-button" type="button" aria-label="Ver troféus">
-        <span class="trophy-icon">🏆</span>
-        <span><b id="trophy-count">0</b>/4 finais</span>
-      </button>
+      <div class="hud-actions">
+        <button id="sound-toggle" class="btn-icon" type="button" aria-label="Ativar ou desativar som">🔊</button>
+        <button id="restart-button" class="btn-icon" type="button" aria-label="Voltar ao início">⟲<span> Início</span></button>
+        <button id="trophy-button" class="trophy-button" type="button" aria-label="Ver troféus">
+          <span class="trophy-icon">🏆</span>
+          <span><b id="trophy-count">0</b>/4 finais</span>
+        </button>
+      </div>
     </header>
 
     <main id="main-content">
+      <!-- Antes era uma barra cheia acima da imagem; agora é uma etiqueta
+           discreta flutuando no canto, sem tirar espaço da cena. -->
       <div class="progress-row">
         <span id="chapter-badge" class="badge">PRÓLOGO</span>
         <span id="progress-text">Decisões: 0</span>
       </div>
 
       <section id="narrative-box" aria-live="polite">
-        <div id="scene-image-container">
-          <img id="scene-image" src="" alt="" class="hidden">
-          <div id="image-placeholder" class="image-fallback">
-            <span class="placeholder-mark">◼</span>
-            <span id="placeholder-text">ILUSTRAÇÃO DA CENA</span>
-          </div>
-        </div>
-
         <div class="scene-heading">
           <span class="scene-eyebrow">REGISTRO DE SOBREVIVÊNCIA</span>
           <h1 id="scene-title">Carregando...</h1>
@@ -107,6 +123,6 @@
     </div>
   </section>
 
-  <script src="script.js"></script>
+  <script src="JS/script.js"></script>
 </body>
 </html>
